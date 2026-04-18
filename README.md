@@ -292,4 +292,6 @@ ORDER BY 1
 
 ## Author
 
+Lucca Moreno
+
 Built as a portfolio project to demonstrate data engineering skills with Google Cloud and BigQuery.

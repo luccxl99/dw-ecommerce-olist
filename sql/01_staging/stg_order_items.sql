@@ -19,7 +19,7 @@ SELECT
     CAST(order_item_id AS INT64) AS order_item_id,
 
     -- Data limite para envio pelo vendedor
-    -- Convertemos de STRING para TIMESTAMP igual ao padrão do projeto
+    -- BigQuery auto-detecta essa coluna como TIMESTAMP no upload do CSV
     shipping_limit_date,
 
     -- Valores financeiros: CSV bruta armazena como STRING.

@@ -15,6 +15,7 @@ SELECT
     -- Status do pedido (mantemos como string — sem transformação de negócio aqui)
     LOWER(TRIM(order_status)) AS order_status,
 
+    -- Timestamps: BigQuery auto-detecta essas colunas como TIMESTAMP no upload do CSV
     order_purchase_timestamp,
     order_approved_at,
     order_delivered_carrier_date,

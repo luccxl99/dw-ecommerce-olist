@@ -70,6 +70,8 @@ The Olist dataset contains ~100k orders made at the Olist Store (a Brazilian e-c
 
 ## Data Model
 
+> Full ERD with column-level detail: [docs/erd.md](docs/erd.md)
+
 The project follows a **Star Schema** — the most common pattern in Data Warehousing.
 
 ```

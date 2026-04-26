@@ -6,7 +6,7 @@
 --            que fizemos com clientes.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE `your_project.dimensions.dim_sellers` AS
+CREATE OR REPLACE TABLE `olistdbt.dimensions.dim_sellers` AS
 
 SELECT
     -- Chave surrogate: hash determinístico da chave natural
@@ -23,7 +23,10 @@ SELECT
     g.latitude  AS seller_latitude,
     g.longitude AS seller_longitude
 
-FROM `your_project.staging.stg_sellers` s
+FROM `olistdbt.staging.stg_sellers` s
 
-LEFT JOIN `your_project.staging.stg_geolocation` g
-    ON s.seller_zip_code_prefix = g.zip_code_prefix
+LEFT JOIN (
+    SELECT zip_code_prefix, AVG(latitude) AS latitude, AVG(longitude) AS longitude
+    FROM `olistdbt.staging.stg_geolocation`
+    GROUP BY zip_code_prefix
+) g ON s.seller_zip_code_prefix = g.zip_code_prefix

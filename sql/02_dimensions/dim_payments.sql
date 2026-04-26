@@ -8,7 +8,7 @@
 --            de pagamento por pedido.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE `your_project.dimensions.dim_payments` AS
+CREATE OR REPLACE TABLE `olistdbt.dimensions.dim_payments` AS
 
 WITH payment_summary AS (
     SELECT
@@ -26,7 +26,7 @@ WITH payment_summary AS (
         -- Flag: pedido usou mais de um método de pagamento
         CASE WHEN COUNT(DISTINCT payment_type) > 1 THEN TRUE ELSE FALSE END AS is_split_payment
 
-    FROM `your_project.staging.stg_order_payments`
+    FROM `olistdbt.staging.stg_order_payments`
     GROUP BY order_id
 ),
 
@@ -39,7 +39,7 @@ primary_payment AS (
             PARTITION BY order_id
             ORDER BY payment_value DESC
         ) AS rn
-    FROM `your_project.staging.stg_order_payments`
+    FROM `olistdbt.staging.stg_order_payments`
 )
 
 SELECT

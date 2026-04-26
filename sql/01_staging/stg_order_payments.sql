@@ -1,12 +1,12 @@
 -- =============================================================================
 -- STAGING: stg_order_payments
--- Fonte: olist_order_payments_dataset (tabela bruta carregada do CSV)
+-- Fonte: order_payments (tabela bruta carregada do CSV)
 -- Descrição: Pagamentos de cada pedido.
 --            Um pedido pode ter múltiplas formas de pagamento (ex: cartão + voucher).
 --            Granularidade: 1 linha = 1 forma de pagamento de 1 pedido.
 -- =============================================================================
 
-CREATE OR REPLACE VIEW `your_project.staging.stg_order_payments` AS
+CREATE OR REPLACE VIEW `olistdbt.staging.stg_order_payments` AS
 
 SELECT
     -- Identificador do pedido
@@ -24,6 +24,6 @@ SELECT
     -- Valor pago nesta forma de pagamento específica
     CAST(payment_value         AS FLOAT64) AS payment_value
 
-FROM `your_project.raw.olist_order_payments_dataset`
+FROM `olistdbt.raw.order_payments`
 
 WHERE order_id IS NOT NULL

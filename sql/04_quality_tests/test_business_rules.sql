@@ -12,7 +12,7 @@
 SELECT
     'item_price negativo' AS regra,
     COUNT(*)              AS violacoes
-FROM `your_project.facts.fct_orders`
+FROM `olistdbt.facts.fct_orders`
 WHERE item_price < 0
 
 UNION ALL
@@ -20,7 +20,7 @@ UNION ALL
 SELECT
     'item_freight_value negativo',
     COUNT(*)
-FROM `your_project.facts.fct_orders`
+FROM `olistdbt.facts.fct_orders`
 WHERE item_freight_value < 0
 
 UNION ALL
@@ -31,7 +31,7 @@ UNION ALL
 SELECT
     'total_payment_value <= 0',
     COUNT(*)
-FROM `your_project.facts.fct_orders`
+FROM `olistdbt.facts.fct_orders`
 WHERE total_payment_value <= 0
 
 UNION ALL
@@ -42,7 +42,7 @@ UNION ALL
 SELECT
     'entrega antes da compra',
     COUNT(*)
-FROM `your_project.facts.fct_orders`
+FROM `olistdbt.facts.fct_orders`
 WHERE order_delivered_customer_date < order_purchase_timestamp
   AND order_delivered_customer_date IS NOT NULL
 
@@ -54,7 +54,7 @@ UNION ALL
 SELECT
     'aprovacao antes da compra',
     COUNT(*)
-FROM `your_project.facts.fct_orders`
+FROM `olistdbt.facts.fct_orders`
 WHERE order_approved_at < order_purchase_timestamp
   AND order_approved_at IS NOT NULL
 
@@ -66,6 +66,6 @@ UNION ALL
 SELECT
     'pedido delivered sem data de entrega',
     COUNT(*)
-FROM `your_project.facts.fct_orders`
+FROM `olistdbt.facts.fct_orders`
 WHERE order_status = 'delivered'
   AND order_delivered_customer_date IS NULL

@@ -13,8 +13,8 @@
 SELECT
     'fct_orders → dim_customers' AS relacionamento,
     COUNT(*)                     AS fks_orfas
-FROM `your_project.facts.fct_orders` f
-LEFT JOIN `your_project.dimensions.dim_customers` d
+FROM `olistdbt.facts.fct_orders` f
+LEFT JOIN `olistdbt.dimensions.dim_customers` d
     ON f.customer_sk = d.customer_sk
 WHERE d.customer_sk IS NULL
 
@@ -26,8 +26,8 @@ UNION ALL
 SELECT
     'fct_orders → dim_sellers',
     COUNT(*)
-FROM `your_project.facts.fct_orders` f
-LEFT JOIN `your_project.dimensions.dim_sellers` d
+FROM `olistdbt.facts.fct_orders` f
+LEFT JOIN `olistdbt.dimensions.dim_sellers` d
     ON f.seller_sk = d.seller_sk
 WHERE d.seller_sk IS NULL
 
@@ -39,8 +39,8 @@ UNION ALL
 SELECT
     'fct_orders → dim_products',
     COUNT(*)
-FROM `your_project.facts.fct_orders` f
-LEFT JOIN `your_project.dimensions.dim_products` d
+FROM `olistdbt.facts.fct_orders` f
+LEFT JOIN `olistdbt.dimensions.dim_products` d
     ON f.product_sk = d.product_sk
 WHERE d.product_sk IS NULL
 
@@ -52,7 +52,7 @@ UNION ALL
 SELECT
     'fct_orders → dim_date',
     COUNT(*)
-FROM `your_project.facts.fct_orders` f
-LEFT JOIN `your_project.dimensions.dim_date` d
+FROM `olistdbt.facts.fct_orders` f
+LEFT JOIN `olistdbt.dimensions.dim_date` d
     ON f.date_sk = d.date_sk
 WHERE d.date_sk IS NULL

@@ -1,13 +1,13 @@
 -- =============================================================================
 -- STAGING: stg_products
--- Fonte: olist_products_dataset + product_category_name_translation
+-- Fonte: products + product_category_translation
 -- Descrição: Produtos cadastrados na plataforma.
 --            Fazemos aqui um JOIN com a tabela de tradução de categorias
 --            para já trazer o nome da categoria em inglês — padrão mais
 --            universal para um portfólio público no GitHub.
 -- =============================================================================
 
-CREATE OR REPLACE VIEW `your_project.staging.stg_products` AS
+CREATE OR REPLACE VIEW `olistdbt.staging.stg_products` AS
 
 SELECT
     -- Identificador único do produto
@@ -28,10 +28,10 @@ SELECT
     CAST(p.product_height_cm  AS FLOAT64) AS product_height_cm,
     CAST(p.product_width_cm   AS FLOAT64) AS product_width_cm
 
-FROM `your_project.raw.olist_products_dataset` p
+FROM `olistdbt.raw.products` p
 
 -- LEFT JOIN para não perder produtos sem tradução de categoria
-LEFT JOIN `your_project.raw.product_category_name_translation` t
+LEFT JOIN `olistdbt.raw.product_category_translation` t
     ON p.product_category_name = t.product_category_name
 
 WHERE p.product_id IS NOT NULL

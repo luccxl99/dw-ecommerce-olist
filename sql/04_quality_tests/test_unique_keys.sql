@@ -11,9 +11,9 @@
 -- -----------------------------------------------------------------------------
 SELECT
     'dim_customers.customer_sk' AS chave,
-    customer_sk,
+    CAST(customer_sk AS STRING),
     COUNT(*) AS ocorrencias
-FROM `your_project.dimensions.dim_customers`
+FROM `olistdbt.dimensions.dim_customers`
 GROUP BY customer_sk
 HAVING COUNT(*) > 1
 
@@ -26,7 +26,7 @@ SELECT
     'dim_sellers.seller_sk',
     CAST(seller_sk AS STRING),
     COUNT(*)
-FROM `your_project.dimensions.dim_sellers`
+FROM `olistdbt.dimensions.dim_sellers`
 GROUP BY seller_sk
 HAVING COUNT(*) > 1
 
@@ -39,7 +39,7 @@ SELECT
     'dim_products.product_sk',
     CAST(product_sk AS STRING),
     COUNT(*)
-FROM `your_project.dimensions.dim_products`
+FROM `olistdbt.dimensions.dim_products`
 GROUP BY product_sk
 HAVING COUNT(*) > 1
 
@@ -52,7 +52,7 @@ SELECT
     'dim_date.date_sk',
     CAST(date_sk AS STRING),
     COUNT(*)
-FROM `your_project.dimensions.dim_date`
+FROM `olistdbt.dimensions.dim_date`
 GROUP BY date_sk
 HAVING COUNT(*) > 1
 
@@ -65,6 +65,6 @@ SELECT
     'dim_payments.payment_sk',
     CAST(payment_sk AS STRING),
     COUNT(*)
-FROM `your_project.dimensions.dim_payments`
+FROM `olistdbt.dimensions.dim_payments`
 GROUP BY payment_sk
 HAVING COUNT(*) > 1

@@ -7,7 +7,7 @@
 --            etc. sem precisar fazer EXTRACT() na tabela fato toda vez.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE `your_project.dimensions.dim_date` AS
+CREATE OR REPLACE TABLE `olistdbt.dimensions.dim_date` AS
 
 WITH date_spine AS (
     -- GENERATE_DATE_ARRAY cria uma sequência de datas dia a dia.

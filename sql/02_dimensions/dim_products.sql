@@ -6,7 +6,7 @@
 --            e atributos físicos usados para análises de frete.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE `your_project.dimensions.dim_products` AS
+CREATE OR REPLACE TABLE `olistdbt.dimensions.dim_products` AS
 
 SELECT
     -- Chave surrogate
@@ -30,4 +30,4 @@ SELECT
     product_height_cm,
     product_width_cm
 
-FROM `your_project.staging.stg_products`
+FROM `olistdbt.staging.stg_products`

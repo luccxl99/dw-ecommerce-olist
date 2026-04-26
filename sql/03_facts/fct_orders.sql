@@ -8,7 +8,7 @@
 --            informações do pedido.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE `your_project.facts.fct_orders` AS
+CREATE OR REPLACE TABLE `olistdbt.facts.fct_orders` AS
 
 SELECT
     -- -------------------------------------------------------------------------
@@ -68,18 +68,18 @@ SELECT
         DAY
     ) AS days_early_or_late  -- positivo = adiantado, negativo = atrasado
 
-FROM `your_project.staging.stg_orders` o
+FROM `olistdbt.staging.stg_orders` o
 
 -- Cada pedido tem 1 ou mais itens — o JOIN expande para a granularidade item
-INNER JOIN `your_project.staging.stg_order_items` i
+INNER JOIN `olistdbt.staging.stg_order_items` i
     ON o.order_id = i.order_id
 
 -- Buscamos o customer_unique_id para poder fazer o JOIN com dim_customers
-INNER JOIN `your_project.staging.stg_customers` c
+INNER JOIN `olistdbt.staging.stg_customers` c
     ON o.customer_id = c.customer_id
 
 -- Pagamentos: LEFT JOIN pois alguns pedidos podem não ter pagamento registrado
-LEFT JOIN `your_project.dimensions.dim_payments` p
+LEFT JOIN `olistdbt.dimensions.dim_payments` p
     ON o.order_id = p.order_id
 
 -- Excluímos pedidos sem data de compra — não é possível calcular métricas de tempo

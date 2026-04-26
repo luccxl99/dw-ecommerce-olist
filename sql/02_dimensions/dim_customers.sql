@@ -8,7 +8,7 @@
 --            por cliente real.
 -- =============================================================================
 
-CREATE OR REPLACE TABLE `your_project.dimensions.dim_customers` AS
+CREATE OR REPLACE TABLE `olistdbt.dimensions.dim_customers` AS
 
 WITH customers_deduped AS (
     -- Um mesmo customer_unique_id pode aparecer em múltiplos pedidos.
@@ -22,7 +22,7 @@ WITH customers_deduped AS (
             PARTITION BY customer_unique_id
             ORDER BY customer_id DESC
         ) AS rn
-    FROM `your_project.staging.stg_customers`
+    FROM `olistdbt.staging.stg_customers`
 )
 
 SELECT
@@ -43,7 +43,10 @@ SELECT
 
 FROM customers_deduped c
 
-LEFT JOIN `your_project.staging.stg_geolocation` g
-    ON c.customer_zip_code_prefix = g.zip_code_prefix
+LEFT JOIN (
+    SELECT zip_code_prefix, AVG(latitude) AS latitude, AVG(longitude) AS longitude
+    FROM `olistdbt.staging.stg_geolocation`
+    GROUP BY zip_code_prefix
+) g ON c.customer_zip_code_prefix = g.zip_code_prefix
 
 WHERE c.rn = 1

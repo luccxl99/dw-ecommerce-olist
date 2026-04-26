@@ -218,33 +218,54 @@ Each test file returns a result set. **A test passes when it returns 0 rows.**
 
 ### Prerequisites
 
-- A Google Cloud project with BigQuery enabled
-- The Olist CSV files downloaded from Kaggle
-- The following BigQuery datasets created: `raw`, `staging`, `dimensions`, `facts`
+- A Google Cloud project with BigQuery enabled (the free [BigQuery Sandbox](https://cloud.google.com/bigquery/docs/sandbox) works — no credit card required)
+- The Olist CSV files downloaded from [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 
 ### Steps
 
-1. **Replace the project placeholder**
+1. **Create the BigQuery datasets**
 
-   All SQL files use `your_project` as a placeholder. Replace it with your actual GCP project ID before running.
-
-   ```bash
-   # Example using sed (Linux/macOS)
-   find ./sql -name "*.sql" -exec sed -i 's/your_project/my-gcp-project/g' {} +
-   ```
+   In the BigQuery console, create four datasets under your project: `raw`, `staging`, `dimensions`, `facts`.
 
 2. **Load raw CSVs into BigQuery**
 
-   Upload each CSV file to the corresponding table in the `raw` dataset using the BigQuery console or `bq load`.
+   For each CSV, create a table in the `raw` dataset using the BigQuery console (Upload → Auto-detect schema). Use the following table names:
 
-3. **Run in order**
+   | CSV file | Table name |
+   |---|---|
+   | `olist_orders_dataset.csv` | `orders` |
+   | `olist_order_items_dataset.csv` | `order_items` |
+   | `olist_order_payments_dataset.csv` | `order_payments` |
+   | `olist_customers_dataset.csv` | `customers` |
+   | `olist_sellers_dataset.csv` | `sellers` |
+   | `olist_products_dataset.csv` | `products` |
+   | `olist_geolocation_dataset.csv` | `geolocation` |
+   | `product_category_name_translation.csv` | `product_category_translation` |
+
+3. **Replace the project ID**
+
+   All SQL files reference `olistdbt` as the GCP project ID. Replace it with your own project ID before running:
+
+   ```bash
+   find ./sql -name "*.sql" -exec sed -i 's/olistdbt/YOUR-PROJECT-ID/g' {} +
+   ```
+
+4. **Run in order**
+
+   Open each file in the BigQuery console editor and click **Run**:
 
    ```
-   01_staging/     → run all stg_*.sql files
-   02_dimensions/  → run all dim_*.sql files
-   03_facts/       → run fct_orders.sql
+   01_staging/       → run all stg_*.sql files
+   02_dimensions/    → run all dim_*.sql files
+   03_facts/         → run fct_orders.sql
    04_quality_tests/ → run all test_*.sql files and verify 0 rows returned
    ```
+
+### Implementation notes
+
+- **Timestamp columns:** BigQuery auto-detect identifies date columns in the Olist CSVs as `TIMESTAMP` directly, so no `PARSE_TIMESTAMP` conversion is needed in staging.
+- **Geolocation deduplication:** The raw geolocation dataset has multiple coordinates per ZIP code. `stg_geolocation` averages them by ZIP. The JOIN in `dim_customers` and `dim_sellers` further aggregates to one row per ZIP to prevent row multiplication.
+- **Category translation:** If the `product_category_translation` table throws a column-not-found error, re-upload the CSV with an explicit schema (`product_category_name:STRING,product_category_name_english:STRING`) instead of auto-detect — the CSV may contain a BOM character in the header.
 
 ---
 

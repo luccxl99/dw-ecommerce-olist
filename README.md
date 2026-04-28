@@ -1,4 +1,4 @@
-# E-Commerce Data Warehouse — Olist (BigQuery)
+# E-Commerce Data Warehouse — Olist (BigQuery + dbt)
 
 A end-to-end Data Warehouse project built on Google BigQuery using the [Brazilian E-Commerce Public Dataset by Olist](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce) from Kaggle. The goal is to transform raw transactional data into a clean, well-modeled analytical layer ready for business intelligence queries.
 
@@ -27,7 +27,7 @@ This project simulates a real-world data engineering workflow:
 3. A **dimensional model** (star schema) is built on top of staging
 4. **Quality tests** validate the pipeline at every critical point
 
-**Tech stack:** Google BigQuery · SQL · Star Schema · Dimensional Modeling
+**Tech stack:** Google BigQuery · dbt (dbt-core + dbt-bigquery) · dbt_utils · Star Schema · Dimensional Modeling
 
 ---
 
@@ -59,11 +59,11 @@ The Olist dataset contains ~100k orders made at the Olist Store (a Brazilian e-c
 └─────────────┘     └─────────────┘     └─────────────────────┘     └──────────────────┘
 ```
 
-| Layer | Type | Purpose |
+| Layer | dbt Materialization | Purpose |
 |---|---|---|
-| `raw` | Tables | CSV files loaded as-is into BigQuery |
-| `staging` | Views | Technical cleaning only — no business logic |
-| `dimensions` | Tables | Descriptive context: who, what, where, when |
+| `raw` | — (external tables) | CSV files loaded as-is into BigQuery |
+| `staging` | View | Technical cleaning only — no business logic |
+| `dimensions` | Table | Descriptive context: who, what, where, when |
 | `facts` | Table | Measurable events (orders) linked to dimensions |
 
 ---
@@ -132,31 +132,42 @@ dw-ecommerce-olist/
 ├── data/
 │   └── raw/                          # CSV files (not tracked in git)
 │
-├── sql/
+├── dbt/                              # dbt project (current)
+│   ├── models/
+│   │   ├── staging/
+│   │   │   ├── _sources.yml          # Source declarations (raw layer)
+│   │   │   ├── _schema.yml           # Staging tests and docs
+│   │   │   ├── stg_orders.sql
+│   │   │   ├── stg_order_items.sql
+│   │   │   ├── stg_order_payments.sql
+│   │   │   ├── stg_customers.sql
+│   │   │   ├── stg_sellers.sql
+│   │   │   ├── stg_products.sql
+│   │   │   └── stg_geolocation.sql
+│   │   ├── dimensions/
+│   │   │   ├── _schema.yml
+│   │   │   ├── dim_customers.sql
+│   │   │   ├── dim_sellers.sql
+│   │   │   ├── dim_products.sql
+│   │   │   ├── dim_date.sql
+│   │   │   └── dim_payments.sql
+│   │   └── facts/
+│   │       ├── _schema.yml
+│   │       └── fct_orders.sql
+│   ├── macros/
+│   │   └── generate_schema_name.sql  # Overrides dbt default to keep clean dataset names
+│   ├── packages.yml                  # dbt_utils dependency
+│   ├── dbt_project.yml
+│   └── profiles.yml                  # Connection config (not committed — use ~/.dbt/profiles.yml)
+│
+├── sql/                              # Legacy SQL scripts (pre-dbt reference)
 │   ├── 01_staging/
-│   │   ├── stg_orders.sql
-│   │   ├── stg_order_items.sql
-│   │   ├── stg_order_payments.sql
-│   │   ├── stg_customers.sql
-│   │   ├── stg_sellers.sql
-│   │   ├── stg_products.sql
-│   │   └── stg_geolocation.sql
-│   │
 │   ├── 02_dimensions/
-│   │   ├── dim_customers.sql
-│   │   ├── dim_sellers.sql
-│   │   ├── dim_products.sql
-│   │   ├── dim_date.sql
-│   │   └── dim_payments.sql
-│   │
 │   ├── 03_facts/
-│   │   └── fct_orders.sql
-│   │
 │   └── 04_quality_tests/
-│       ├── test_not_null.sql
-│       ├── test_unique_keys.sql
-│       ├── test_referential_integrity.sql
-│       └── test_business_rules.sql
+│
+├── docs/
+│   └── erd.md
 │
 └── README.md
 ```
@@ -167,7 +178,7 @@ dw-ecommerce-olist/
 
 ### Staging
 
-Views that sit directly on top of raw tables. Rules applied here:
+dbt **views** that sit directly on top of raw tables. Rules applied here:
 
 - Cast strings to proper types (`FLOAT64`, `INT64`, `TIMESTAMP`)
 - Standardize text: `TRIM()`, `UPPER()`, `INITCAP()`
@@ -181,7 +192,7 @@ Views that sit directly on top of raw tables. Rules applied here:
 
 ### Dimensions
 
-Materialized tables that describe the "who", "what", "where", and "when" of each order.
+dbt **tables** that describe the "who", "what", "where", and "when" of each order.
 
 | Table | Key | Description |
 |---|---|---|
@@ -205,14 +216,14 @@ All dimensions use a **surrogate key** generated via `FARM_FINGERPRINT()` — a 
 
 ## Quality Tests
 
-Each test file returns a result set. **A test passes when it returns 0 rows.**
+Tests are defined in `_schema.yml` files alongside each model and executed with `dbt test`. **A test passes when it returns 0 failing rows.**
 
-| File | What it checks |
+| Test | What it checks |
 |---|---|
-| `test_not_null.sql` | Critical columns (PKs, FKs) must never be null |
-| `test_unique_keys.sql` | Primary keys must be unique across all dimension tables |
-| `test_referential_integrity.sql` | Every FK in the fact table must point to an existing dimension row |
-| `test_business_rules.sql` | Domain rules: no negative prices, delivery date after purchase date, etc. |
+| `not_null` | Critical columns (PKs, FKs) are never null |
+| `unique` | Primary keys are unique across all dimension tables |
+| `relationships` | Every FK in `fct_orders` points to an existing row in the target dimension |
+| `dbt_utils.unique_combination_of_columns` | Composite PK on `stg_order_items` (`order_id` + `order_item_id`) |
 
 ---
 
@@ -220,53 +231,86 @@ Each test file returns a result set. **A test passes when it returns 0 rows.**
 
 ### Prerequisites
 
+- Python 3.9+
 - A Google Cloud project with BigQuery enabled (the free [BigQuery Sandbox](https://cloud.google.com/bigquery/docs/sandbox) works — no credit card required)
+- [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) installed and authenticated
 - The Olist CSV files downloaded from [Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
 
-### Steps
+### 1. Install dbt
 
-1. **Create the BigQuery datasets**
+```bash
+pip install dbt-bigquery
+```
 
-   In the BigQuery console, create four datasets under your project: `raw`, `staging`, `dimensions`, `facts`.
+### 2. Authenticate with Google Cloud
 
-2. **Load raw CSVs into BigQuery**
+```bash
+gcloud auth application-default login
+```
 
-   For each CSV, create a table in the `raw` dataset using the BigQuery console (Upload → Auto-detect schema). Use the following table names:
+### 3. Configure the connection
 
-   | CSV file | Table name |
-   |---|---|
-   | `olist_orders_dataset.csv` | `orders` |
-   | `olist_order_items_dataset.csv` | `order_items` |
-   | `olist_order_payments_dataset.csv` | `order_payments` |
-   | `olist_customers_dataset.csv` | `customers` |
-   | `olist_sellers_dataset.csv` | `sellers` |
-   | `olist_products_dataset.csv` | `products` |
-   | `olist_geolocation_dataset.csv` | `geolocation` |
-   | `product_category_name_translation.csv` | `product_category_translation` |
+Copy `dbt/profiles.yml` to `~/.dbt/profiles.yml` and set your GCP project ID:
 
-3. **Replace the project ID**
+```yaml
+olist_dw:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: YOUR-PROJECT-ID
+      dataset: dbt_dev
+      threads: 4
+      timeout_seconds: 300
+      location: southamerica-east1
+```
 
-   All SQL files reference `olistdbt` as the GCP project ID. Replace it with your own project ID before running:
+### 4. Load raw CSVs into BigQuery
 
-   ```bash
-   find ./sql -name "*.sql" -exec sed -i 's/olistdbt/YOUR-PROJECT-ID/g' {} +
-   ```
+In the BigQuery console, create a `raw` dataset and load each CSV as a table (Upload → Auto-detect schema):
 
-4. **Run in order**
+| CSV file | Table name |
+|---|---|
+| `olist_orders_dataset.csv` | `orders` |
+| `olist_order_items_dataset.csv` | `order_items` |
+| `olist_order_payments_dataset.csv` | `order_payments` |
+| `olist_customers_dataset.csv` | `customers` |
+| `olist_sellers_dataset.csv` | `sellers` |
+| `olist_products_dataset.csv` | `products` |
+| `olist_geolocation_dataset.csv` | `geolocation` |
+| `product_category_name_translation.csv` | `product_category_translation` |
 
-   Open each file in the BigQuery console editor and click **Run**:
+### 5. Update the source project ID
 
-   ```
-   01_staging/       → run all stg_*.sql files
-   02_dimensions/    → run all dim_*.sql files
-   03_facts/         → run fct_orders.sql
-   04_quality_tests/ → run all test_*.sql files and verify 0 rows returned
-   ```
+In `dbt/models/staging/_sources.yml`, set `database` to your GCP project ID (default is `olistdbt`).
+
+### 6. Run dbt
+
+```bash
+cd dbt
+
+# Install dbt packages
+dbt deps
+
+# Build all models (staging → dimensions → facts)
+dbt run
+
+# Run all quality tests
+dbt test
+```
+
+To build and test in a single command:
+
+```bash
+dbt build
+```
 
 ### Implementation notes
 
 - **Timestamp columns:** BigQuery auto-detect identifies date columns in the Olist CSVs as `TIMESTAMP` directly, so no `PARSE_TIMESTAMP` conversion is needed in staging.
 - **Geolocation deduplication:** The raw geolocation dataset has multiple coordinates per ZIP code. `stg_geolocation` averages them by ZIP. The JOIN in `dim_customers` and `dim_sellers` further aggregates to one row per ZIP to prevent row multiplication.
+- **Schema naming:** The `generate_schema_name` macro overrides dbt's default behavior so datasets are named `staging`, `dimensions`, and `facts` directly — without the `dbt_dev_` prefix that dbt would normally prepend.
 - **Category translation:** If the `product_category_translation` table throws a column-not-found error, re-upload the CSV with an explicit schema (`product_category_name:STRING,product_category_name_english:STRING`) instead of auto-detect — the CSV may contain a BOM character in the header.
 
 ---
@@ -317,4 +361,4 @@ ORDER BY 1
 
 Lucca Moreno
 
-Built as a portfolio project to demonstrate data engineering skills with Google Cloud and BigQuery.
+Built as a portfolio project to demonstrate data engineering skills with Google Cloud, BigQuery, and dbt.

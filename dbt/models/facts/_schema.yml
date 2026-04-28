@@ -1,0 +1,43 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: >
+      Tabela fato central do DW. Granularidade: 1 linha = 1 item de 1 pedido.
+      Um pedido com 3 produtos gera 3 linhas, permitindo análises por produto
+      sem perder informações do pedido.
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: order_purchase_timestamp
+        tests:
+          - not_null
+      - name: customer_sk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_sk
+      - name: seller_sk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_sellers')
+                field: seller_sk
+      - name: product_sk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_products')
+                field: product_sk
+      - name: date_sk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_sk

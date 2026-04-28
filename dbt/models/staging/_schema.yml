@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: stg_orders
+    description: "Pedidos realizados na plataforma Olist. Limpeza técnica apenas — sem regras de negócio."
+    columns:
+      - name: order_id
+        description: "Identificador único do pedido"
+        tests:
+          - not_null
+          - unique
+      - name: customer_id
+        description: "FK para stg_customers — gerado por pedido, não único por cliente físico"
+        tests:
+          - not_null
+
+  - name: stg_order_items
+    description: "Itens de cada pedido. Granularidade: 1 linha = 1 item de 1 pedido."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - order_id
+              - order_item_id
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+      - name: product_id
+        tests:
+          - not_null
+      - name: order_item_id
+        tests:
+          - not_null
+
+  - name: stg_customers
+    description: "Clientes da plataforma. customer_id é por pedido; customer_unique_id é o ID real."
+    columns:
+      - name: customer_id
+        description: "ID gerado por pedido — não representa unicidade de cliente físico"
+        tests:
+          - not_null
+          - unique
+      - name: customer_unique_id
+        description: "ID único real do cliente — use este para análises de comportamento"
+        tests:
+          - not_null
+
+  - name: stg_order_payments
+    description: "Pagamentos dos pedidos. Um pedido pode ter múltiplos registros (split payment)."
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+
+  - name: stg_sellers
+    description: "Vendedores cadastrados na plataforma Olist"
+    columns:
+      - name: seller_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_products
+    description: "Produtos com categoria traduzida para inglês e atributos físicos convertidos para numérico"
+    columns:
+      - name: product_id
+        tests:
+          - not_null
+          - unique
+
+  - name: stg_geolocation
+    description: "Coordenadas geográficas por CEP. Duplicatas resolvidas via média das coordenadas."
+    columns:
+      - name: zip_code_prefix
+        tests:
+          - not_null
+          - unique
